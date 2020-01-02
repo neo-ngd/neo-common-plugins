@@ -1,0 +1,86 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\Users\\betty.bao\\neo-projects\\neo-modules\\src\\GraphqlPlugin\\GraphQLPlugin.csproj": {}
+  },
+  "projects": {
+    "D:\\Users\\betty.bao\\neo-projects\\neo-modules\\src\\GraphqlPlugin\\GraphQLPlugin.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Users\\betty.bao\\neo-projects\\neo-modules\\src\\GraphqlPlugin\\GraphQLPlugin.csproj",
+        "projectName": "GraphQLPlugin",
+        "projectPath": "D:\\Users\\betty.bao\\neo-projects\\neo-modules\\src\\GraphqlPlugin\\GraphQLPlugin.csproj",
+        "packagesPath": "C:\\Users\\betty.bao\\.nuget\\packages\\",
+        "outputPath": "D:\\Users\\betty.bao\\neo-projects\\neo-modules\\src\\GraphqlPlugin\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
+        "configFilePaths": [
+          "D:\\Users\\betty.bao\\neo-projects\\neo-node\\NuGet.Config",
+          "C:\\Users\\betty.bao\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {},
+          "https://www.myget.org/F/neo/api/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "dependencies": {
+            "GraphQL": {
+              "target": "Package",
+              "version": "[2.4.0, )"
+            },
+            "GraphQL.Server.Transports.AspNetCore": {
+              "target": "Package",
+              "version": "[3.4.0, )"
+            },
+            "GraphQL.Server.Ui.Playground": {
+              "target": "Package",
+              "version": "[3.4.0, )"
+            },
+            "Microsoft.AspNetCore.Mvc": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Neo": {
+              "target": "Package",
+              "version": "[3.0.0-CI00828, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "NETStandard.Library": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.100\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

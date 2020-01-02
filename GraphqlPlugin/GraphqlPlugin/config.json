@@ -1,0 +1,16 @@
+{
+  "PluginConfiguration": {
+    "BindAddress": "127.0.0.1",
+    "Port": 20336,
+    "SslCert": "",
+    "SslCertPassword": "",
+    "TrustedAuthorities": [],
+    "RpcUser": "",
+    "RpcPass": "",
+    "MaxGasInvoke": 10,
+    "MaxFee": 0.1,
+    "DisabledMethods": [
+      "openwallet"
+    ]
+  }
+}
