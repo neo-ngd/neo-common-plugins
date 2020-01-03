@@ -1,11 +1,13 @@
 ﻿# GraphQL Guidelines
 ## Enabling Services
 
-GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API,gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools. Each neo-cli can optionally install GraphQL plugin to enable related services. You can type the following command to install the graphql plugin:
+GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API,gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools. Each neo-cli can optionally install GraphQL plugin to enable related services. You can type the following command to compile the GraphQL plugin from the source code:
 
-`install GraphQLPlugin`
+`dotnet publish`
 
-After installation, you need to restart the neo-cli server for the plugin to take effect.
+and copy the dll and the configuration file to the `Plugins` folder. After installation, you need to restart the neo-cli server for the plugin to take effect.
+
+Note: You should put the dependency files in the Plugins directory.
 
 ## Modifying configuration file
 Before installing the plugin, you can modify the BindAddress, Port and other parameters in the config.json file in the GraphQL folder:
@@ -51,6 +53,14 @@ Before installing the plugin, you can modify the BindAddress, Port and other par
 |scriptinvocation|script & [scripthashes]| Run a script through the virtual machine and get the result||
 |functioninvocation|scripthash & operation & [params]| Invoke a smart contract with specified script hash, passing in an operation and the corresponding params||
 |getstorage| scripthash & key| Get the stored value with the contract script hash and the key||
+|closewallet| -| Close the wallet||
+|dumpprivkey| address| Exports the private key of the specified address||
+|getbalance| assetID| Get the balance of the specified asset|
+|newaddress| -| Create a new address||
+|unclaimedgas| -| Get the amount of unclaimed GAS||
+|importprivkey| privkey| Import the private key||
+|listaddress| -| List all the addresses||
+|openwallet| path & password | Open the wallet||
 
 Note：`[]` means the parameter is optional.
 

@@ -1,11 +1,11 @@
 ﻿# Restful Guidelines
 ## Enabling Services
 
-Each neo-cli can optionally install Restful plugin to enable related services. You can type the following command to install the resuful plugin:
+Each neo-cli can optionally install RestServer plugin to enable restful services. You can type the following command to compile the RestServer plugin from the source code:
 
-`install RestServer`
+`dotnet publish`
 
-After installation, you need to restart the neo-cli server for the plugin to take effect.
+and copy the dll and the configuration file to the `Plugins` folder. After installation, you need to restart the neo-cli server for the plugin to take effect.
 
 Note: You should put the dependency files in the Plugins directory.
 
@@ -24,7 +24,7 @@ Before installing the plugin, you can modify the BindAddress, Port and other par
         "RpcPass": "",
         "MaxGasInvoke": 10,
         "MaxFee": 0.1,
-        "DisabledMethods": []
+        "DisabledMethods": ["api/wallet/openwallet"]
     }
 }
 ```
