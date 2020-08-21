@@ -18,8 +18,4 @@
     </None>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy /y C:\Users\Qrz\Documents\joeqian10\neo-modules\RosettaAPI\bin\Debug\netstandard2.0\RosettaAPI.dll C:\Users\Qrz\source\repos\neo-node-for-test\neo-cli\bin\Debug\netcoreapp2.1\Plugins\&#xD;&#xA;copy /y C:\Users\Qrz\Documents\joeqian10\neo-modules\RosettaAPI\bin\Debug\netstandard2.0\RosettaAPI\config.json C:\Users\Qrz\source\repos\neo-node-for-test\neo-cli\bin\Debug\netcoreapp2.1\Plugins\RosettaAPI\" />
-  </Target>
-
 </Project>
