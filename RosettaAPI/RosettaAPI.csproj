@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Neo.Plugins</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+    <PackageReference Include="Neo" Version="2.10.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RosettaAPI\config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy /y C:\Users\Qrz\Documents\joeqian10\neo-modules\RosettaAPI\bin\Debug\netstandard2.0\RosettaAPI.dll C:\Users\Qrz\source\repos\neo-node-for-test\neo-cli\bin\Debug\netcoreapp2.1\Plugins\&#xD;&#xA;copy /y C:\Users\Qrz\Documents\joeqian10\neo-modules\RosettaAPI\bin\Debug\netstandard2.0\RosettaAPI\config.json C:\Users\Qrz\source\repos\neo-node-for-test\neo-cli\bin\Debug\netcoreapp2.1\Plugins\RosettaAPI\" />
+  </Target>
+
+</Project>
