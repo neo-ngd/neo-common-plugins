@@ -33,7 +33,5 @@ COPY --from=build /api/RosettaAPI/config.json .
 WORKDIR /neo-cli
 COPY  --from=Build /app/neo-cli .
 
-RUN ls
-
 WORKDIR /neo-cli
 ENTRYPOINT ["screen","-DmS","node","dotnet","neo-cli.dll","-r"]
