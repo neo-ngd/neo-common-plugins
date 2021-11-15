@@ -29,4 +29,7 @@ Add this plugin to enable the restful service. It also provides the swagger-ui f
 GraphQL provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools.
 
 ### RosettaAPI
-This plugin realizes an implementation for Rosetta API. For more infomation, refer to [Rosetta API](https://www.rosetta-api.org/).
+This plugin realizes an implementation of Rosetta API. For more infomation, refer to [Rosetta API](https://www.rosetta-api.org/).
+
+### N3RosettaAPI
+This plugin realizes an implementation of Rosetta API for Neo N3 network. For more infomation, refer to [Rosetta API](https://www.rosetta-api.org/).

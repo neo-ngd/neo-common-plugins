@@ -1,0 +1,12 @@
+{
+  "PluginConfiguration": {
+    "Network": 860833102,
+    "DBPath": "RosettaAPI_{0}",
+    "RosettaVersion": "1.4.10",
+    "BindAddress": "127.0.0.1",
+    "Port": 10335,
+    "SslCert": "",
+    "SslCertPassword": "",
+    "TrustedAuthorities": []
+  }
+}
