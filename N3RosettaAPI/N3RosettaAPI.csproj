@@ -23,8 +23,4 @@
     </None>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy C:\Users\Qrz\Documents\github.com\neo-ngd\neo-common-plugins\N3RosettaAPI\bin\Debug\net5.0\N3RosettaAPI.dll C:\Users\Qrz\Desktop\RosettaTesting\neo-node-3.0.3\neo-cli\bin\Debug\net5.0\Plugins\" />
-  </Target>
-
 </Project>
