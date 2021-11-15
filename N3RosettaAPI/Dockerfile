@@ -20,13 +20,15 @@ RUN apt-get update && apt-get install -y \
 RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /neo-cli/Plugins
-COPY --from=build /api/RosettaAPI.dll .
+COPY --from=build /api/N3RosettaAPI.dll .
+COPY --from=build /mytmp/neo-common-plugins/N3RosettaAPI/Dependencies/LevelDBStore.dll .
 
-WORKDIR /neo-cli/Plugins/RosettaAPI
-COPY --from=build /api/RosettaAPI/config.json .
+WORKDIR /neo-cli/Plugins/N3RosettaAPI
+COPY --from=build /api/N3RosettaAPI/config.json .
 
 WORKDIR /neo-cli
-COPY  --from=Build /app/neo-cli .
+COPY --from=build /app/neo-cli .
+COPY --from=build /mytmp/neo-common-plugins/N3RosettaAPI/Dependencies/libleveldb.so .
 
 RUN ls
 
