@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 RUN apt-get update && apt-get install -y \
   unzip \
   wget 
@@ -9,10 +9,10 @@ WORKDIR /mytmp/neo-common-plugins/N3RosettaAPI
 RUN dotnet restore && dotnet publish -c Release -o /api
 
 WORKDIR /app
-RUN wget https://github.com/neo-project/neo-node/releases/download/v3.0.3/neo-cli-linux-x64.zip
+RUN wget https://github.com/neo-project/neo-node/releases/download/v3.1.0/neo-cli-linux-x64.zip
 RUN unzip neo-cli-linux-x64.zip
 
-FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
 RUN apt-get update && apt-get install -y \
   screen \
   libleveldb-dev \
