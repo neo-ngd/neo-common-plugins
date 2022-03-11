@@ -5,6 +5,8 @@
 The construction APIs can be used to generate address from a public key, build a transaction and send the transaction to the blockchain. 
 
 ### Flow of Operations
+
+```
                                Caller (i.e. Coinbase)                + Construction API Implementation
                               +-------------------------------------------------------------------------------------------+
                                                                      |
@@ -47,6 +49,7 @@ Broadcast Signed Transaction X to monitor status                     |
                              X Submit Transaction +--------------------------> /construction/submit (online)
                              X                                       |
                                                                      +
+```
 
 ## APIs
 
