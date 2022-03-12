@@ -1,4 +1,4 @@
-﻿#!/bin/sh
+#!/bin/sh
 
 # run app in background
 screen -dmS node dotnet neo-cli.dll
