@@ -127,7 +127,14 @@ namespace Neo.Plugins
             trigger["gasconsumed"] = appExec.GasConsumed.ToString();
             try
             {
-                trigger["stack"] = appExec.Stack.Select(q => q.ToJson()).ToArray();
+                if (appExec.Stack.Length <= 1000)
+                {
+                    trigger["stack"] = appExec.Stack.Select(q => q.ToJson()).ToArray();
+                }
+                else
+                {
+                    trigger["stack"] = "error: too many items";
+                }
             }
             catch (InvalidOperationException)
             {

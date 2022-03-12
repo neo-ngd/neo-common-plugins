@@ -12,7 +12,7 @@ WORKDIR /app
 RUN wget https://github.com/neo-project/neo-node/releases/download/v3.1.0/neo-cli-linux-x64.zip
 RUN unzip neo-cli-linux-x64.zip
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal AS final
 RUN apt-get update && apt-get install -y \
   screen \
   libleveldb-dev \
@@ -29,8 +29,7 @@ COPY --from=build /api/N3RosettaAPI/config.json .
 WORKDIR /neo-cli
 COPY --from=build /app/neo-cli .
 COPY --from=build /mytmp/neo-common-plugins/N3RosettaAPI/Dependencies/libleveldb.so .
+COPY start.sh .
+RUN chmod +x start.sh
 
-RUN ls
-
-WORKDIR /neo-cli
-ENTRYPOINT ["screen","-DmS","node","dotnet","neo-cli.dll","-r"]
+ENTRYPOINT ["/neo-cli/start.sh" ]
