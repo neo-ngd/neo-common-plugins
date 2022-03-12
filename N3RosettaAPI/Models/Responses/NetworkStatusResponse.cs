@@ -25,7 +25,7 @@ namespace Neo.Plugins
         {
             JObject json = new JObject();
             json["current_block_identifier"] = CurrentBlockIdentifier.ToJson();
-            json["current_block_timestamp"] = CurrentBlockTimestamp.ToString();
+            json["current_block_timestamp"] = CurrentBlockTimestamp;
             json["genesis_block_identifier"] = GenesisBlockIdentifier.ToJson();
             if (OldestBlockIdentifier != null)
             {

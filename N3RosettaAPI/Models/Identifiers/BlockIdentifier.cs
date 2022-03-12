@@ -21,7 +21,7 @@ namespace Neo.Plugins
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["index"] = Index.ToString();
+            json["index"] = Index;
             json["hash"] = Hash;
             return json;
         }

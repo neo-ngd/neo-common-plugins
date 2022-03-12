@@ -60,7 +60,7 @@ namespace Neo.Plugins
                 {
                     { "connected", true.ToString().ToLower() },
                     { "address", p.Listener.ToString() },
-                    { "height", p.LastBlockIndex.ToString() }
+                    { "height", p.LastBlockIndex }
                 })
             ));
 

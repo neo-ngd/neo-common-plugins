@@ -174,6 +174,12 @@ namespace Neo.Plugins
             return new Transaction(new TransactionIdentifier(neoTx.Hash.ToString()), operations, new Metadata(metadata));
         }
 
+        private readonly HashSet<string> _tokens = new()
+        {
+            NativeContract.NEO.Hash.ToString(),
+            NativeContract.GAS.Hash.ToString(),
+        };
+
         private Operation[] GetOperations(UInt256 txHash)
         {
             Operation[] operations = Array.Empty<Operation>();
@@ -201,16 +207,24 @@ namespace Neo.Plugins
                             if (notification["eventname"].AsString() == "Transfer")
                             {
                                 var tokenHashString = notification["contract"].AsString();
+                                if (!_tokens.Contains(tokenHashString))
+                                {
+                                    continue;
+                                }
                                 var tokenHash = UInt160.Parse(tokenHashString);
                                 var metadata = new Metadata(new Dictionary<string, JObject>() { { "script_hash", tokenHashString } });
                                 var (symbol, decimals) = GetSymbolAndDecimals(tokenHash);
                                 if (symbol != string.Empty && decimals >= 0)
                                 {
                                     var states = notification["state"]["value"] as JArray;
-                                    var from = new UInt160(Convert.FromBase64String(states[0]["value"].GetString()));    // "QuVDguhtzcoJ4NqLtn4vrE1Jh0Q=", base64
-                                    var to = new UInt160(Convert.FromBase64String(states[1]["value"].GetString()));      // "g5LnhsU5ejzyX1sdxKeGvbuziAM="
-                                    var amount = states[2]["value"].GetString();                                         // "10000000000000000"
-
+                                    //var from = new UInt160(Convert.FromBase64String(states[0]["value"].GetString()));    // "QuVDguhtzcoJ4NqLtn4vrE1Jh0Q=", base64
+                                    //var to = new UInt160(Convert.FromBase64String(states[1]["value"].GetString()));      // "g5LnhsU5ejzyX1sdxKeGvbuziAM="
+                                    //var amount = states[2]["value"].GetString();                                         // "10000000000000000"
+                                    var fromBase64 = states[0]["value"]?.GetString();
+                                    var toBase64 = states[1]["value"]?.GetString();
+                                    UInt160 from = fromBase64 == null ? UInt160.Zero : new UInt160(Convert.FromBase64String(fromBase64));    // "QuVDguhtzcoJ4NqLtn4vrE1Jh0Q=", base64
+                                    UInt160 to = toBase64 == null ? UInt160.Zero : new UInt160(Convert.FromBase64String(toBase64));    // "QuVDguhtzcoJ4NqLtn4vrE1Jh0Q=", base64
+                                    var amount = states[2]["value"].GetString();
                                     Operation fromOperation = new Operation(new OperationIdentifier(index),
                                         OperationType.Transfer,
                                         OperationStatus.OPERATION_STATUS_SUCCESS.Status, // vm state is HALT, FAULT transfer is ignored

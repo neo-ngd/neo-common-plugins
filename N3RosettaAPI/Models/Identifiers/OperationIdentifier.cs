@@ -32,9 +32,9 @@ namespace Neo.Plugins
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["index"] = Index.ToString();
+            json["index"] = Index;
             if (NetworkIndex != null)
-                json["network_index"] = NetworkIndex.ToString();
+                json["network_index"] = NetworkIndex;
             return json;
         }
     }

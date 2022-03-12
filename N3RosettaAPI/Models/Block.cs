@@ -29,7 +29,7 @@ namespace Neo.Plugins
             JObject json = new JObject();
             json["block_identifier"] = BlockIdentifier.ToJson();
             json["parent_block_identifier"] = ParentBlockIdentifier.ToJson();
-            json["timestamp"] = Timestamp.ToString();
+            json["timestamp"] = Timestamp;
             json["transactions"] = Transactions.Select(p => p.ToJson()).ToArray();
             if (Metadata != null && Metadata.ToJson() != null)
                 json["metadata"] = Metadata.ToJson();

@@ -40,7 +40,7 @@ namespace Neo.Plugins
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["code"] = Code.ToString();
+            json["code"] = Code;
             json["message"] = Message;
             if (Description != null)
                 json["description"] = Description;

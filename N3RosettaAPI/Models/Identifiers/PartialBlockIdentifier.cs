@@ -26,7 +26,7 @@ namespace Neo.Plugins
         {
             JObject json = new JObject();
             if (Index != null && Index >= 0)
-                json["index"] = Index.ToString();
+                json["index"] = Index;
             if (!string.IsNullOrEmpty(Hash))
                 json["hash"] = Hash;
             return json;

@@ -20,7 +20,7 @@ namespace Neo.Plugins
         {
             JObject json = new JObject();
             json["status"] = Status;
-            json["successful"] = Successful.ToString().ToLower();
+            json["successful"] = Successful;
             return json;
         }
 

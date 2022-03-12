@@ -41,7 +41,7 @@ namespace Neo.Plugins
         {
             JObject json = new JObject();
             json["symbol"] = Symbol;
-            json["decimals"] = Decimals.ToString();
+            json["decimals"] = Decimals;
             if (Metadata != null && Metadata.ToJson() != null)
                 json["metadata"] = Metadata.ToJson();
             return json;
