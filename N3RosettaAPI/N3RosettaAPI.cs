@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.IO;
-using Neo.IO.Data.LevelDB;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -19,7 +18,6 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using static System.IO.Path;
 using NeoBlock = Neo.Network.P2P.Payloads.Block;
 
 namespace Neo.Plugins
@@ -28,23 +26,20 @@ namespace Neo.Plugins
     {
         private IWebHost host;
         private RosettaController controller;
-        private DB db;
-        private WriteBatch _writeBatch;
+        private IStore store;
 
         public override string Name => "N3RosettaAPI";
 
         protected override void Configure()
         {
             Settings.Load(GetConfiguration());
-            string path = string.Format(Settings.Default.DBPath, Settings.Default.Network.ToString("X8"));
-            db = DB.Open(GetFullPath(path), new Options { CreateIfMissing = true });
         }
 
         protected override void OnSystemLoaded(NeoSystem system)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-
-            controller = new RosettaController(system, this.db);
+            store = system.LoadStore(string.Format(Settings.Default.DBPath, Settings.Default.Network.ToString("X8")));
+            controller = new RosettaController(system, store);
             var dflt = Settings.Default;
             host = new WebHostBuilder().UseKestrel(options => options.Listen(dflt.BindAddress, dflt.Port, listenOptions =>
             {
@@ -97,21 +92,22 @@ namespace Neo.Plugins
         {
             if (system.Settings.Network != Settings.Default.Network) return;
 
-            ResetBatch();
-
             //processing log for transactions
             foreach (var appExec in applicationExecutedList.Where(p => p.Transaction != null))
             {
                 var txJson = TxLogToJson(appExec);
-                Put(appExec.Transaction.Hash.ToArray(), Neo.Utility.StrictUTF8.GetBytes(txJson.ToString()));
+                controller.SaveTransactionJson(appExec.Transaction.Hash, txJson);
             }
 
             //processing log for block
             var blockJson = BlockLogToJson(block, applicationExecutedList);
             if (blockJson != null)
             {
-                Put(block.Hash.ToArray(), Neo.Utility.StrictUTF8.GetBytes(blockJson.ToString()));
+                controller.SaveBlockJson(block.Hash, blockJson);
             }
+
+            if (Settings.Default.EnableHistoricalBalance)
+                controller.SaveStates(block.Index, snapshot.GetChangeSet().Where(p => p.State != TrackState.None).ToList());
         }
 
         public static JObject TxLogToJson(Blockchain.ApplicationExecuted appExec)
@@ -211,24 +207,12 @@ namespace Neo.Plugins
         void IPersistencePlugin.OnCommit(NeoSystem system, NeoBlock block, DataCache snapshot)
         {
             if (system.Settings.Network != Settings.Default.Network) return;
-            db.Write(WriteOptions.Default, _writeBatch);
         }
 
         static string GetExceptionMessage(Exception exception)
         {
             return exception?.GetBaseException().Message;
         }
-
-        private void ResetBatch()
-        {
-            _writeBatch = new WriteBatch();
-        }
-
-        private void Put(byte[] key, byte[] value)
-        {
-            _writeBatch.Put(key, value);
-        }
-
 
         private async Task ProcessAsync(HttpContext context)
         {

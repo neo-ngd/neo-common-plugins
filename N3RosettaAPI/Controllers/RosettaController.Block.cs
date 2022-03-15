@@ -1,5 +1,4 @@
 ﻿using Neo.IO;
-using Neo.IO.Data.LevelDB;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -106,7 +105,7 @@ namespace Neo.Plugins
         {
             int index = 0;
             List<Operation> operations = new();
-            byte[] value = db.Get(ReadOptions.Default, blockHash.ToArray());
+            byte[] value = db.TryGet(BlockKey(blockHash));
             if (value is null) return null;
             var json = JObject.Parse(Utility.StrictUTF8.GetString(value));
             foreach (var execution in (JArray)json["executions"])
@@ -239,10 +238,10 @@ namespace Neo.Plugins
                 new(neoTx.Sender.ToAddress(system.Settings.AddressVersion)),
                 new Amount($"-{neoTx.NetworkFee + neoTx.SystemFee}", Currency.GAS),
                 null));
-            byte[] value = db.Get(ReadOptions.Default, neoTx.Hash.ToArray());
+            byte[] value = db.TryGet(TransactionKey(neoTx.Hash));
             if (!(value is null))
             {
-                var raw = JObject.Parse(Neo.Utility.StrictUTF8.GetString(value));
+                var raw = JObject.Parse(Utility.StrictUTF8.GetString(value));
                 var executions = raw["executions"] as JArray;
                 if (executions.Count > 0)
                 {

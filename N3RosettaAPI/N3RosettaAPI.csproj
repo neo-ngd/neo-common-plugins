@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Neo" Version="3.1.0" />
+    <PackageReference Include="Neo.Cryptography.MPT" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
