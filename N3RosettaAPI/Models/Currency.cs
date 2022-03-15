@@ -1,6 +1,7 @@
 ﻿using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,19 @@ namespace Neo.Plugins
         // Any additional information related to the currency itself. For example, it would be useful to
         // populate this object with the contract address of an NEP-5 token.
         public Metadata Metadata { get; set; }
+
+        public static Currency GAS => new(NativeContract.GAS.Symbol,
+            NativeContract.GAS.Decimals,
+            new(new()
+            {
+                { "script_hash", NativeContract.GAS.Hash.ToString() }
+            }));
+        public static Currency NEO => new(NativeContract.NEO.Symbol,
+            NativeContract.NEO.Decimals,
+            new(new()
+            {
+                { "script_hash", NativeContract.NEO.Hash.ToString() }
+            }));
 
         public Currency(string symbol, int decimals, Metadata metadata = null)
         {
