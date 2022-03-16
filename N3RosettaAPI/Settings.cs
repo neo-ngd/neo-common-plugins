@@ -9,6 +9,7 @@ namespace Neo.Plugins
         public uint Network { get; }
         public string DBPath { get; }
         public string RosettaVersion { get; }
+        public bool EnableHistoricalBalance { get; }
         public IPAddress BindAddress { get; }
         public ushort Port { get; }
         public string SslCert { get; }
@@ -22,6 +23,7 @@ namespace Neo.Plugins
             this.Network = section.GetValue("Network", 5195086u);
             this.DBPath = section.GetValue("DBPath", "RosettaAPI_{0}");
             this.RosettaVersion = section.GetSection("RosettaVersion").Value;
+            this.EnableHistoricalBalance = section.GetValue("EnableHistoricalBalance", true);
             this.BindAddress = IPAddress.Parse(section.GetSection("BindAddress").Value);
             this.Port = ushort.Parse(section.GetSection("Port").Value);
             this.SslCert = section.GetSection("SslCert").Value;

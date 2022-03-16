@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Neo.IO.Data.LevelDB;
+using Neo.Cryptography.MPTTrie;
+using Neo.Persistence;
+using Neo.SmartContract;
 
 namespace Neo.Plugins
 {
@@ -7,9 +9,9 @@ namespace Neo.Plugins
     internal partial class RosettaController
     {
         private readonly NeoSystem system;
-        private readonly DB db;
+        private readonly IStore db;
 
-        public RosettaController(NeoSystem system, DB db)
+        public RosettaController(NeoSystem system, IStore db)
         {
             this.system = system;
             this.db = db;

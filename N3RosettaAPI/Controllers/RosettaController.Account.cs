@@ -1,4 +1,5 @@
 ﻿using Neo.IO.Json;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -25,11 +26,40 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject AccountBalance(AccountBalanceRequest request)
         {
+            DataCache snapshot = system.StoreView;
+            BlockIdentifier respBlockIdentifier;
             if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             if (request.AccountIdentifier is null)
                 return Error.ACCOUNT_IDENTIFIER_INVALID.ToJson();
-
+            if (request.BlockIdentifier is null)
+            {
+                respBlockIdentifier = new(NativeContract.Ledger.CurrentIndex(system.StoreView), NativeContract.Ledger.CurrentHash(system.StoreView).ToString());
+            }
+            else if (request.BlockIdentifier.Index is null && request.BlockIdentifier.Hash is null)
+            {
+                return Error.BLOCK_IDENTIFIER_INVALID.ToJson();
+            }
+            else if (request.BlockIdentifier.Index is not null)
+            {
+                var index = (uint)request.BlockIdentifier.Index;
+                var hash = NativeContract.Ledger.GetBlockHash(system.StoreView, index);
+                if (request.BlockIdentifier.Hash is not null && request.BlockIdentifier.Hash != hash.ToString())
+                    return Error.BLOCK_IDENTIFIER_INVALID.ToJson();
+                if (Settings.Default.EnableHistoricalBalance)
+                    snapshot = new HistoricalDataCache(db, GetStateRoot(index));
+                respBlockIdentifier = new(index, hash.ToString());
+            }
+            else
+            {
+                if (!UInt256.TryParse(request.BlockIdentifier.Hash, out var hash))
+                    return Error.BLOCK_HASH_INVALID.ToJson();
+                var block = NativeContract.Ledger.GetBlock(system.StoreView, hash);
+                request.BlockIdentifier.Index = block.Index;
+                if (Settings.Default.EnableHistoricalBalance)
+                    snapshot = new HistoricalDataCache(db, GetStateRoot(block.Index));
+                respBlockIdentifier = new(block.Index, request.BlockIdentifier.Hash);
+            }
             UInt160 account;
             try
             {
@@ -40,12 +70,9 @@ namespace Neo.Plugins
                 return Error.ACCOUNT_ADDRESS_INVALID.ToJson();
             }
 
-            // can only get current balance
             Amount[] balances;
-            
             if (request.Currencies != null)
             {
-                // the user provides currencies
                 var tmp = new List<Amount>();
                 foreach (var currency in request.Currencies)
                 {
@@ -53,7 +80,7 @@ namespace Neo.Plugins
                     {
                         if (!UInt160.TryParse(currency.Metadata["script_hash"].AsString(), out UInt160 scriptHash))
                             return Error.CONTRACT_ADDRESS_INVALID.ToJson();
-                        Amount balance = GetBalance(scriptHash, account);
+                        Amount balance = GetBalance(snapshot, scriptHash, account);
                         if (balance is null)
                             return Error.VM_FAULT.ToJson();
                         tmp.Add(balance);
@@ -62,26 +89,21 @@ namespace Neo.Plugins
                 balances = tmp.ToArray();
             }
             else
-                balances = GetNeoAndGas(account);
-
-            var snapshot = system.StoreView;
-            NeoBlock currentBlock = NativeContract.Ledger.GetBlock(snapshot, NativeContract.Ledger.CurrentIndex(snapshot));
-            BlockIdentifier blockIdentifier = new BlockIdentifier(currentBlock.Index, currentBlock.Hash.ToString());
-            AccountBalanceResponse response = new AccountBalanceResponse(blockIdentifier, balances);
+                balances = GetNeoAndGas(snapshot, account);
+            AccountBalanceResponse response = new(respBlockIdentifier, balances);
             return response.ToJson();
         }
 
-        private Amount[] GetNeoAndGas(UInt160 account)
+        private Amount[] GetNeoAndGas(DataCache snapshot, UInt160 account)
         {
             var neo = NativeContract.NEO;
             var gas = NativeContract.GAS;
-            var snapshot = system.StoreView;
             var neoAmount = new Amount(neo.BalanceOf(snapshot, account).ToString(), new Currency(neo.Symbol, neo.Decimals, new Metadata(new Dictionary<string, JObject>() { { "script_hash", neo.Hash.ToString() } })));
             var gasAmount = new Amount(gas.BalanceOf(snapshot, account).ToString(), new Currency(gas.Symbol, gas.Decimals, new Metadata(new Dictionary<string, JObject>() { { "script_hash", gas.Hash.ToString() } })));
             return new Amount[] { neoAmount, gasAmount };
         }
 
-        private Amount GetBalance(UInt160 scriptHash, UInt160 account)
+        private Amount GetBalance(DataCache snapshot, UInt160 scriptHash, UInt160 account)
         {
             byte[] script;
             var metadata = new Metadata(new Dictionary<string, JObject>() { { "script_hash", scriptHash.ToString() } });
@@ -92,7 +114,7 @@ namespace Neo.Plugins
                 sb.EmitDynamicCall(scriptHash, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, system.StoreView, settings: system.Settings);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: system.Settings);
             if (engine.State == VMState.HALT)
             {
                 byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
