@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Neo" Version="3.1.0" />
-    <PackageReference Include="Neo.Cryptography.MPT" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
