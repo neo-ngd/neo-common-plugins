@@ -13,23 +13,21 @@ namespace Neo.Plugins
         public string UnsignedTransaction { get; set; }
         // signatures
         public Signature[] Signatures { get; set; }
-        // this is unique to neo, and needed to indicate signature usages
-        public SignatureUsage[] SignatureUsages { get; set; }
 
-        public ConstructionCombineRequest(NetworkIdentifier networkIdentifier, string unsignedTransaction, Signature[] signatures, SignatureUsage[] signatureUsages)
+
+        public ConstructionCombineRequest(NetworkIdentifier networkIdentifier, string unsignedTransaction, Signature[] signatures)
         {
             NetworkIdentifier = networkIdentifier;
             UnsignedTransaction = unsignedTransaction;
             Signatures = signatures;
-            SignatureUsages = signatureUsages;
         }
 
         public static ConstructionCombineRequest FromJson(JObject json)
         {
             return new ConstructionCombineRequest(NetworkIdentifier.FromJson(json["network_identifier"]),
                 json["unsigned_transaction"].AsString(),
-                (json["signatures"] as JArray).Select(p => Signature.FromJson(p)).ToArray(),
-                (json["signature_usages"] as JArray).Select(p => SignatureUsage.FromJson(p)).ToArray());
+                (json["signatures"] as JArray).Select(p => Signature.FromJson(p)).ToArray()
+                );
         }
     }
 }

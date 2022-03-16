@@ -2,8 +2,14 @@
 using Neo.Cryptography.ECC;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Text;
 
 namespace Neo.Plugins
 {
@@ -148,32 +154,18 @@ namespace Neo.Plugins
             }
         }
 
-        //public static string ToDescription(this Enum val)
-        //{
-        //    var type = val.GetType();
 
-        //    var memberInfo = type.GetMember(val.ToString());
+        public static string ToUtf8String(this byte[] text)
+        {
+            return Encoding.UTF8.GetString(text);
+        }
 
-        //    var attributes = memberInfo[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
 
-        //    if (attributes == null || attributes.Length != 1)
-        //    {
-        //        // if not defined, return ToString()
-        //        return val.ToString();
-        //    }
-
-        //    return (attributes.Single() as DescriptionAttribute).Description;
-        //}
-
-        //public static Enum FromDescription(this JObject json)
-        //{
-
-        //}
-
-        public static Signer ToSigner(this JObject json)
+        public static Signer ToSigner(this JObject json, byte addressVersion)
         {
             Signer signer = new();
-            signer.Account = UInt160.Parse(json["account"].AsString());
+            var address = json["account"].AsString();
+            signer.Account = address.ToUInt160(addressVersion);
             WitnessScope scopes = json["scopes"].TryGetEnum<WitnessScope>();
             signer.Scopes = scopes;
             if (scopes == WitnessScope.CustomContracts)
@@ -185,6 +177,78 @@ namespace Neo.Plugins
                 signer.AllowedGroups = (json["allowedgroups"] as JArray).ToList().Select(p => ECPoint.Parse(p.AsString(), ECCurve.Secp256r1)).ToArray();
             }
             return signer;
+        }
+
+        public static Amount ToNEOorGASAmount(this long amount, UInt160 tokenhash)
+        {
+            return tokenhash == NativeContract.NEO.Hash ? amount.ToNEOAmount() :
+                 tokenhash == NativeContract.GAS.Hash ? amount.ToGasAmount() : null;
+        }
+
+        public static Amount ToNEOorGASAmount(this BigInteger amount, UInt160 tokenhash)
+        {
+            return tokenhash == NativeContract.NEO.Hash ? amount.ToNEOAmount() :
+                 tokenhash == NativeContract.GAS.Hash ? amount.ToGasAmount() : null;
+        }
+
+        public static Amount ToNEOAmount(this long amount)
+        {
+            var gasAmount = new Amount(amount.ToString(), new Currency(NativeContract.NEO.Symbol, NativeContract.NEO.Decimals, new Metadata(new Dictionary<string, JObject>() { { "script_hash", NativeContract.NEO.Hash.ToString() } })));
+            return gasAmount;
+        }
+
+        public static Amount ToNEOAmount(this BigInteger amount)
+        {
+            var gasAmount = new Amount(amount.ToString(), new Currency(NativeContract.NEO.Symbol, NativeContract.NEO.Decimals, new Metadata(new Dictionary<string, JObject>() { { "script_hash", NativeContract.NEO.Hash.ToString() } })));
+            return gasAmount;
+        }
+
+
+        public static Amount ToGasAmount(this long amount)
+        {
+            var gasAmount = new Amount(amount.ToString(), new Currency(NativeContract.GAS.Symbol, NativeContract.GAS.Decimals, new Metadata(new Dictionary<string, JObject>() { { "script_hash", NativeContract.GAS.Hash.ToString() } })));
+            return gasAmount;
+        }
+
+        public static Amount ToGasAmount(this BigInteger amount)
+        {
+            var gasAmount = new Amount(amount.ToString(), new Currency(NativeContract.GAS.Symbol, NativeContract.GAS.Decimals, new Metadata(new Dictionary<string, JObject>() { { "script_hash", NativeContract.GAS.Hash.ToString() } })));
+            return gasAmount;
+        }
+
+        /// <summary>
+        /// address or UInt160 string =>(UInt160)address hash
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="addressVersion"></param>
+        /// <returns></returns>
+        public static UInt160 ToUInt160(this string address, byte addressVersion)
+        {
+            return address.StartsWith("0x") ? UInt160.Parse(address) : address.ToScriptHash(addressVersion);
+        }
+
+        /// <summary>
+        /// Public Key => (UInt160)address hash
+        /// </summary>
+        /// <param name="publicKeyPoint"></param>
+        /// <returns></returns>
+
+        public static UInt160 ToUInt160FromPublicKey(this ECPoint publicKeyPoint)
+        {
+            var script = Contract.CreateSignatureRedeemScript(publicKeyPoint);
+            return script.ToScriptHash();
+        }
+
+
+        /// <summary>
+        /// Public Key => (UInt160)address hash
+        /// </summary>
+        /// <param name="publicKeyHex"></param>
+        /// <returns></returns>
+        public static UInt160 ToUInt160FromPublicKey(this string publicKeyHex)
+        {
+            var point = ECPoint.FromBytes(publicKeyHex.HexToBytes(), ECCurve.Secp256r1);
+            return point.ToUInt160FromPublicKey();
         }
     }
 }

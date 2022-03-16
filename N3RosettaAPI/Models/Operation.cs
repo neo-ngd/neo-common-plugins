@@ -52,7 +52,7 @@ namespace Neo.Plugins
         {
             return new Operation(OperationIdentifier.FromJson(json["operation_identifier"]),
                 json["type"].AsString(),
-                json["status"].AsString(),
+                json["status"]?.AsString(),
                 json.ContainsProperty("related_operations") ? (json["related_operations"] as JArray).Select(p => OperationIdentifier.FromJson(p)).ToArray() : null,
                 json.ContainsProperty("account") ? AccountIdentifier.FromJson(json["account"]) : null,
                 json.ContainsProperty("amount") ? Amount.FromJson(json["amount"]) : null,

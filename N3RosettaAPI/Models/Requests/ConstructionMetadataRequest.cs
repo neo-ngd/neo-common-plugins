@@ -16,11 +16,15 @@ namespace Neo.Plugins
         // (which may require multiple node fetches), the client can populate an options object to limit the metadata returned to only the subset required.
         public Metadata Options { get; set; }
 
-        public PublicKey[] PublicKeys { get; set; } 
+        public Metadata Metadata { get; set; }
 
-        public ConstructionMetadataRequest(NetworkIdentifier networkIdentifier, Metadata options = null, PublicKey[] publicKeys = null)
+
+        public PublicKey[] PublicKeys { get; set; }
+
+        public ConstructionMetadataRequest(NetworkIdentifier networkIdentifier, Metadata metadata = null, Metadata options = null, PublicKey[] publicKeys = null)
         {
             NetworkIdentifier = networkIdentifier;
+            Metadata = metadata;
             Options = options;
             PublicKeys = publicKeys;
         }
@@ -28,6 +32,7 @@ namespace Neo.Plugins
         public static ConstructionMetadataRequest FromJson(JObject json)
         {
             return new ConstructionMetadataRequest(NetworkIdentifier.FromJson(json["network_identifier"]),
+                json.ContainsProperty("metadata") ? Metadata.FromJson(json["metadata"]) : null,
                 json.ContainsProperty("options") ? Metadata.FromJson(json["options"]) : null,
                 json.ContainsProperty("public_keys") ? (json["public_keys"] as JArray).Select(p => PublicKey.FromJson(p)).ToArray() : null);
         }
@@ -36,6 +41,8 @@ namespace Neo.Plugins
         {
             JObject json = new JObject();
             json["network_identifier"] = NetworkIdentifier.ToJson();
+            if (Metadata != null)
+                json["metadata"] = Metadata.ToJson();
             if (Options != null)
                 json["options"] = Options.ToJson();
             return json;

@@ -40,43 +40,54 @@ namespace Neo.Plugins
             NeoTransaction neoTx;
             try
             {
-                neoTx = new NeoTransaction();
-                byte[] unsigned = Convert.FromBase64String(request.UnsignedTransaction); // use base64 string in N3
-                using MemoryStream ms = new MemoryStream(unsigned, false);
-                using BinaryReader br = new BinaryReader(ms, Encoding.UTF8);
-                neoTx.DeserializeUnsigned(br);
+                byte[] txRaw = Convert.FromBase64String(request.UnsignedTransaction); // use base64 string in N3
+                neoTx = txRaw.AsSerializable<NeoTransaction>();
             }
             catch (Exception)
             {
                 return Error.TX_DESERIALIZE_ERROR.ToJson();
             }
 
-            if (neoTx.Witnesses != null && neoTx.Witnesses.Length > 0)
-                return Error.TX_ALREADY_SIGNED.ToJson();
+            if (neoTx.Witnesses == null || neoTx.Witnesses.Length != neoTx.Signers.Length)
+            {
+                return Error.TX_WITNESSES_INVALID.ToJson();
+            }
+
 
             if (request.Signatures.Length == 0)
                 return Error.NO_SIGNATURE.ToJson();
-            // get signature usages
-            if (request.SignatureUsages.Length == 0 || request.SignatureUsages.Length != neoTx.Signers.Length)
-                return Error.PARAMETER_INVALID.ToJson();
 
-            if (request.SignatureUsages.Sum(p => p.SignatureIndexs.Length) != request.Signatures.Length)
-                return Error.PARAMETER_INVALID.ToJson();
-
-            Witness[] witnesses = new Witness[neoTx.Signers.Length];
+            var signData = neoTx.GetSignData(system.Settings.Network);
             for (int i = 0; i < neoTx.Signers.Length; i++)
             {
-                var signatureUsage = request.SignatureUsages.First(p => p.SignerAccount == neoTx.Signers[i].Account);
-                var signatures = signatureUsage.SignatureIndexs.Select(p => request.Signatures.ElementAt(p)).ToArray();
-                if (signatures.Length == 1)
-                    witnesses[i] = CreateSignatureWitness(signatures[0]);
-                else
-                    witnesses[i] = CreateMultiSignatureWitness(signatures);
-                if (witnesses[i] is null)
-                    return Error.INVALID_SIGNATURES.ToJson();
+                var witness = neoTx.Witnesses[i];
+                if (witness.VerificationScript.IsSignatureContract())
+                {
+                    var sign = request.Signatures.First(s =>
+                        s.PublicKey.AddressHash == neoTx.Signers[i].Account);
+                    CreateSignatureWitness(witness, sign, signData);
+                }
+                else if (witness.VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
+                {
+                    var pubKeys = points.OrderBy(p => p).Select(p => p.ToUInt160FromPublicKey()).ToList();
+                    var signs = new List<byte[]>();
+                    var count = 0;
+                    foreach (var pubkeyhash in pubKeys)
+                    {
+                        if (count == m) break;
+                        var sign = request.Signatures.First(s => s.PublicKey.AddressHash == pubkeyhash);
+                        signs.Add(sign.HexBytes.HexToBytes());
+                        count++;
+                    }
+                    var mulWitness = new Witness();
+                    using (ScriptBuilder sb = new ScriptBuilder())
+                    {
+                        signs.ForEach(p => sb.EmitPush(p));
+                        witness.InvocationScript = sb.ToArray();
+                    }
+                }
             }
 
-            neoTx.Witnesses = witnesses;
             byte[] signed = neoTx.ToArray();
             ConstructionCombineResponse response = new ConstructionCombineResponse(Convert.ToBase64String(signed));
             return response.ToJson();
@@ -146,6 +157,7 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionMetadata(ConstructionMetadataRequest request)
         {
+            Console.WriteLine($"ConstructionMetadata Start");
             if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
@@ -153,7 +165,7 @@ namespace Neo.Plugins
             Signer[] signers = Array.Empty<Signer>();
             try
             {
-                signers = (request.Options["signers"] as JArray).Select(p => p.ToSigner()).ToArray();
+                signers = (request.Options["signers"] as JArray).Select(p => p.ToSigner(system.Settings.AddressVersion)).ToArray();
             }
             catch (Exception)
             {
@@ -161,10 +173,10 @@ namespace Neo.Plugins
             }
 
             // get public keys, need public keys to calculate network fee
-            if (!request.Options.ContainsKey("public_key_usages"))
+            if (!request.Options.ContainsKey("signer_metadata"))
                 return Error.PARAMETER_INVALID.ToJson();
-            PublicKeyUsage[] publicKeyUsages = (request.Options["public_key_usages"] as JArray).Select(p => PublicKeyUsage.FromJson(p)).ToArray();
-            if (request.PublicKeys == null || publicKeyUsages.Sum(p => p.KeyIndexs.Length) != request.PublicKeys.Length)
+            SignerMetadata[] signerMetadatas = (request.Options["signer_metadata"] as JArray).Select(p => SignerMetadata.FromJson(p, system.Settings.AddressVersion)).ToArray();
+            if (request.PublicKeys == null)
                 return Error.PARAMETER_INVALID.ToJson();
 
             // get script
@@ -218,7 +230,7 @@ namespace Neo.Plugins
             tx.SystemFee = sysFee;
 
             // network fee is not available here, will be calculated in 
-            var netFee = CalculateNetworkFee(system.StoreView, tx, request.PublicKeys, publicKeyUsages);
+            var netFee = CalculateNetworkFee(system.StoreView, tx, request.PublicKeys, signerMetadatas);
 
             // valid until block
             var validUntilBlock = NativeContract.Ledger.CurrentIndex(system.StoreView) + system.Settings.MaxValidUntilBlockIncrement;
@@ -231,10 +243,15 @@ namespace Neo.Plugins
                 { "netfee", netFee },
                 { "validuntilblock", validUntilBlock },
                 { "script", Convert.ToBase64String(script) },
-                { "signers", request.Options["signers"] }
+                { "signers", request.Options["signers"] },
+                { "signer_metadata", request.Options["signer_metadata"] }
             });
 
-            ConstructionMetadataResponse response = new ConstructionMetadataResponse(metadata);
+            var suggeustFee = new Amount[] {
+                (netFee+sysFee).ToGasAmount(),
+            };
+
+            ConstructionMetadataResponse response = new ConstructionMetadataResponse(metadata, suggeustFee);
             return response.ToJson();
         }
 
@@ -273,7 +290,12 @@ namespace Neo.Plugins
 
             Transaction tx = ConvertTx(neoTx);
             Operation[] operations = tx.Operations; // empty, 
-            string[] signers = Array.Empty<string>(); // signers are included in metadata            
+            string[] signers = Array.Empty<string>(); // signers are included in metadata
+            if (request.Signed)
+            {
+                //signers = neoTx.Signers.Select(s => s.Account.ToAddress(system.Settings.AddressVersion)).ToArray();
+                signers = GetRequiredSigners(neoTx).Select(s => s.ToAddress(system.Settings.AddressVersion)).ToArray();
+            }
             ConstructionParseResponse response = new ConstructionParseResponse(operations, signers, tx.Metadata);
             return response.ToJson();
         }
@@ -294,6 +316,7 @@ namespace Neo.Plugins
 
             // The Operations in the request of this method won't be handled again because they are already handled in `/construction/preprocess`
             NeoTransaction neoTx;
+            UInt160[] pendingSigners = new UInt160[0];
             try
             {
                 neoTx = new();
@@ -303,28 +326,36 @@ namespace Neo.Plugins
                 neoTx.SystemFee = (long)request.Metadata["sysfee"].GetNumber();
                 neoTx.NetworkFee = (long)request.Metadata["netfee"].GetNumber();
                 neoTx.ValidUntilBlock = (uint)request.Metadata["validuntilblock"].GetInt32();
-                neoTx.Signers = (request.Metadata["signers"] as JArray).Select(p => p.ToSigner()).ToArray();
+                neoTx.Signers = (request.Metadata["signers"] as JArray).Select(p => p.ToSigner(system.Settings.AddressVersion)).ToArray();
                 neoTx.Attributes = Array.Empty<TransactionAttribute>();
+
+                //PublicKeyUsage[] publicKeyUsages = (request.Metadata["public_key_usages"] as JArray).Select(p => PublicKeyUsage.FromJson(p)).ToArray();
+                SignerMetadata[] signerMetadatas = (request.Metadata["signer_metadata"] as JArray).Select(p => SignerMetadata.FromJson(p, system.Settings.AddressVersion)).ToArray();
+
+                if (signerMetadatas.Length > 0)
+                {
+                    if (request.PublicKeys == null)
+                        return Error.PARAMETER_INVALID.ToJson();
+
+                    (neoTx.Witnesses, pendingSigners) = CreateWitness(system.StoreView, neoTx, request.PublicKeys, signerMetadatas);
+                }
                 // no witnesses
             }
             catch (Exception)
             {
                 return Error.PARAMETER_INVALID.ToJson();
             }
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter bw = new BinaryWriter(ms, Utility.StrictUTF8);
-            (neoTx as IVerifiable).SerializeUnsigned(bw);
 
-            byte[] unsignedRaw = ms.ToArray();
-            var scriptHashes = neoTx.GetScriptHashesForVerifying(system.StoreView);
+            byte[] txRaw = neoTx.ToArray();
+            //var scriptHashes = neoTx.GetScriptHashesForVerifying(system.StoreView);
 
-            SigningPayload[] signingPayloads = new SigningPayload[scriptHashes.Length];
-            for (int i = 0; i < scriptHashes.Length; i++)
+            SigningPayload[] signingPayloads = new SigningPayload[pendingSigners.Length];
+            for (int i = 0; i < pendingSigners.Length; i++)
             {
-                var account = new AccountIdentifier(scriptHashes[i].ToAddress(system.Settings.AddressVersion));
-                signingPayloads[i] = new SigningPayload(unsignedRaw.ToHexString(), account);
+                var account = new AccountIdentifier(pendingSigners[i].ToAddress(system.Settings.AddressVersion));
+                signingPayloads[i] = new SigningPayload(neoTx.GetSignData(system.Settings.Network).Sha256().ToHexString(), account);
             }
-            ConstructionPayloadsResponse response = new ConstructionPayloadsResponse(Convert.ToBase64String(unsignedRaw), signingPayloads);
+            ConstructionPayloadsResponse response = new ConstructionPayloadsResponse(Convert.ToBase64String(txRaw), signingPayloads);
             return response.ToJson();
         }
 
@@ -348,6 +379,8 @@ namespace Neo.Plugins
 
             Dictionary<string, JObject> pairs = new();
             pairs.Add("signers", request.Metadata["signers"]);
+            pairs.Add("signer_metadata", request.Metadata["signer_metadata"]);
+
 
             // get script from either existing script in metadata or converting from operations
             byte[] script = Array.Empty<byte>();
@@ -381,10 +414,14 @@ namespace Neo.Plugins
                 }
             }
 
-            Metadata options = new(pairs);
-            ConstructionPreprocessResponse response = new(options);
+            Metadata options = new(pairs);          
+            SignerMetadata[] signerMetadatas = (request.Metadata["signer_metadata"] as JArray).Select(p => SignerMetadata.FromJson(p, system.Settings.AddressVersion)).ToArray();
+            AccountIdentifier[] publicKeys = GetRequiredSigners(signerMetadatas);
+            ConstructionPreprocessResponse response = new(options, publicKeys);
             return response.ToJson();
         }
+
+
 
         /// <summary>
         /// Submit a pre-signed transaction to the node. This call should not block on the transaction being included in a block. 
@@ -436,33 +473,136 @@ namespace Neo.Plugins
             }
         }
 
-        private long CalculateNetworkFee(DataCache snapshot, NeoTransaction tx, PublicKey[] publicKeys, PublicKeyUsage[] publicKeyUsages)
+        private AccountIdentifier[] GetRequiredSigners(SignerMetadata[] signerMetadatas)
+        {
+            var list = new HashSet<string>();
+            foreach (var signerMetadata in signerMetadatas)
+            {
+                if (signerMetadata.RelatedAccounts.Length == 0)
+                {
+                    list.Add(signerMetadata.SignerAccount);
+                }
+                else
+                {
+                    foreach (var account in signerMetadata.RelatedAccounts)
+                    {
+                        list.Add(account);
+                    }
+                }
+            }
+            return list.Select(s => new AccountIdentifier(s)).ToArray();
+        }
+
+        private List<UInt160> GetRequiredSigners(NeoTransaction signedTx)
+        {
+            var signers = new List<UInt160>();
+
+            foreach (var witness in signedTx.Witnesses)
+            {
+                if (witness.VerificationScript.IsSignatureContract())
+                {
+                    signers.Add(witness.VerificationScript.ToScriptHash()); ;
+                }
+                else if (witness.VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
+                {
+                    signers.AddRange(points.Select(p => p.ToUInt160FromPublicKey()));
+                }
+            }
+            return signers;
+        }
+
+        private (Witness[], UInt160[]) CreateWitness(DataCache snapshot, NeoTransaction tx, PublicKey[] publicKeys, SignerMetadata[] signerMetadatas)
+        {
+            UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+            var witnesses = new List<Witness>();
+            var pendingSigners = new List<UInt160>();
+
+            foreach (UInt160 hash in hashes)
+            {
+                var signerMetadata = signerMetadatas.First(p => p.SignerAccountHash == hash);
+                if (signerMetadata.RelatedAccounts.Length == 0)
+                {
+                    var publicKey = publicKeys.First(p => p.AddressHash == signerMetadata.SignerAccountHash);
+                    pendingSigners.Add(signerMetadata.SignerAccountHash);
+                    witnesses.Add(new Witness()
+                    {
+                        VerificationScript = Contract.CreateSignatureRedeemScript(ECPoint.FromBytes(publicKey.HexBytes.HexToBytes(), ECCurve.Secp256r1))
+                    });
+                }
+                else if (signerMetadata.RelatedAccounts.Length > 0)
+                {
+                    var relateAccounts = signerMetadata.RelatedAccounts.Select(a => a.ToUInt160(system.Settings.AddressVersion)).ToHashSet();
+                    var pubKeys = publicKeys.Where(p => relateAccounts.Contains(p.HexBytes.ToUInt160FromPublicKey()));
+                    pendingSigners.AddRange(pubKeys.Select(p => p.AddressHash));
+                    witnesses.Add(new Witness()
+                    {
+                        VerificationScript = Contract.CreateMultiSigRedeemScript(signerMetadata.M, pubKeys.Select(p => ECPoint.FromBytes(p.HexBytes.HexToBytes(), ECCurve.Secp256r1)).ToArray())
+                    });
+                }
+                else
+                {
+                    //We can support more contract types in the future.
+                }
+            }
+            return (witnesses.ToArray(), pendingSigners.ToArray());
+        }
+
+        private long CalculateNetworkFee(DataCache snapshot, NeoTransaction tx, PublicKey[] publicKeys, SignerMetadata[] signers)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = NeoTransaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
+
+            var publicKeyMap = publicKeys.ToDictionary(p => p.HexBytes.ToUInt160FromPublicKey(), p => p);
             // tx.Witnesses is empty
             foreach (UInt160 hash in hashes)
             {
-                var pubKeyUsage = publicKeyUsages.First(p => p.SignerAccount == hash);
-                var pubKeys = pubKeyUsage.KeyIndexs.Select(p => publicKeys.ElementAt(p)).ToArray();
+                var pubKeys = new List<PublicKey>();
+                var signer = signers.First(p => p.SignerAccount.ToUInt160(system.Settings.AddressVersion) == hash);
+                if (signer.RelatedAccounts?.Length > 0 && signer.M > 0)
+                {
+                    foreach (var account in signer.RelatedAccounts)
+                    {
+                        var accountHash = account.ToUInt160(system.Settings.AddressVersion);
+                        if (publicKeyMap.ContainsKey(accountHash))
+                        {
+                            pubKeys.Add(publicKeyMap[accountHash]);
+                        }
+                        else
+                        {
+                            throw new Exception($"Miss publickey for [{accountHash}] in [{hash}]");
+                        }
+                    }
+                }
+                else
+                {
+                    if (publicKeyMap.ContainsKey(hash))
+                    {
+                        pubKeys.Add(publicKeyMap[hash]);
+                    }
+                    else
+                    {
+                        throw new Exception($"Miss publickey for [{hash}]");
+                    }
+                }
+                //var pubKeys = pubKeyUsage.KeyIndexs.Select(p => publicKeys.ElementAt(p)).ToArray();
 
                 byte[] witness_script;
 
-                if (pubKeys.Length == 1)
+                if (pubKeys.Count == 1)
                 {
                     witness_script = Contract.CreateSignatureRedeemScript(pubKeys.Select(p => ECPoint.FromBytes(p.HexBytes.HexToBytes(), ECCurve.Secp256r1)).First());
                     size += 67 + witness_script.GetVarSize();
                     networkFee += exec_fee_factor * Neo.SmartContract.Helper.SignatureContractCost();
                 }
-                else if (pubKeys.Length > 1)
+                else if (pubKeys.Count > 1)
                 {
-                    witness_script = Contract.CreateMultiSigRedeemScript(pubKeyUsage.M, pubKeys.Select(p => ECPoint.FromBytes(p.HexBytes.HexToBytes(), ECCurve.Secp256r1)).ToArray());
-                    int size_inv = 66 * pubKeyUsage.M;
+                    witness_script = Contract.CreateMultiSigRedeemScript(signer.M, pubKeys.Select(p => ECPoint.FromBytes(p.HexBytes.HexToBytes(), ECCurve.Secp256r1)).ToArray());
+                    int size_inv = 66 * signer.M;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * Neo.SmartContract.Helper.MultiSignatureContractCost(pubKeyUsage.M, pubKeys.Length);
+                    networkFee += exec_fee_factor * Neo.SmartContract.Helper.MultiSignatureContractCost(signer.M, pubKeys.Count);
                 }
                 else
                 {
@@ -473,10 +613,7 @@ namespace Neo.Plugins
             return networkFee;
         }
 
-        // operations only contain transfer type
-        // the total operation number must be even, odd operation index is from, even operation index is to
-        // from operation index + 1 == to operation index
-        // token script hash must be included in Amount metadata
+     
         private byte[] ConvertOperationsToScript(Operation[] operations)
         {
             var n = operations.Length;
@@ -506,12 +643,15 @@ namespace Neo.Plugins
             return script;
         }
 
-        private Witness CreateSignatureWitness(Signature signature)
+        private Witness CreateSignatureWitness(Witness witness, Signature signature, byte[] signData)
         {
-            if (!VerifyKeyAndSignature(signature, out ECPoint pubKey))
+            if (!VerifyKeyAndSignature(signature, signData, out ECPoint pubKey))
+            {
+                Console.WriteLine($"Verify Fail:{signature.HexBytes},{signData.ToHexString()},{pubKey.EncodePoint(false).ToHexString()}");
                 return null;
+            }
 
-            Witness witness = new Witness();
+            //Witness witness = new Witness();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(signature.HexBytes.HexToBytes());
@@ -522,12 +662,12 @@ namespace Neo.Plugins
             return witness;
         }
 
-        private Witness CreateMultiSignatureWitness(Signature[] signatures)
+        private Witness CreateMultiSignatureWitness(Signature[] signatures, byte[] signData)
         {
             ECPoint[] pubKeys = new ECPoint[signatures.Length];
             for (int i = 0; i < signatures.Length; i++)
             {
-                if (!VerifyKeyAndSignature(signatures[i], out ECPoint pubKey))
+                if (!VerifyKeyAndSignature(signatures[i], signData, out ECPoint pubKey))
                     return null;
                 pubKeys[i] = pubKey;
             }
@@ -550,7 +690,7 @@ namespace Neo.Plugins
             return witness;
         }
 
-        private bool VerifyKeyAndSignature(Signature signature, out ECPoint pubKey)
+        private bool VerifyKeyAndSignature(Signature signature, byte[] signData, out ECPoint pubKey)
         {
             pubKey = null;
 
@@ -572,13 +712,14 @@ namespace Neo.Plugins
             if (Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash().ToAddress(system.Settings.AddressVersion) != signature.SigningPayload.AccountIdentifier.Address)
                 return false;
 
-            var neoTx = new NeoTransaction();
-            var rawTx = signature.SigningPayload.HexBytes.HexToBytes();
-            using MemoryStream ms = new MemoryStream(rawTx, false);
-            using BinaryReader br = new BinaryReader(ms, Encoding.UTF8);
-            neoTx.DeserializeUnsigned(br);
+            if (signature.SigningPayload.HexBytes != signData.Sha256().ToHexString())
+            {
+                Console.WriteLine($"SigningPayload.HexBytes: {signature.SigningPayload.HexBytes} not equal to {signData.ToHexString()}");
+                return false;
+            }
+          
             // 3. check if public key and signature matches
-            return Crypto.VerifySignature(neoTx.GetSignData(system.Settings.Network), signature.HexBytes.HexToBytes(), pubKey);
+            return Crypto.VerifySignature(signData, signature.HexBytes.HexToBytes(), pubKey);
         }
     }
 }
