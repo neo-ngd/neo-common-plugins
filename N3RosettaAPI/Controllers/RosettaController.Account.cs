@@ -7,7 +7,6 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using NeoBlock = Neo.Network.P2P.Payloads.Block;
 
 namespace Neo.Plugins
 {
@@ -44,6 +43,8 @@ namespace Neo.Plugins
             {
                 var index = (uint)request.BlockIdentifier.Index;
                 var hash = NativeContract.Ledger.GetBlockHash(system.StoreView, index);
+                if (hash is null)
+                    return Error.BLOCK_NOT_FOUND.ToJson();
                 if (request.BlockIdentifier.Hash is not null && request.BlockIdentifier.Hash != hash.ToString())
                     return Error.BLOCK_IDENTIFIER_INVALID.ToJson();
                 if (Settings.Default.EnableHistoricalBalance)
@@ -55,6 +56,8 @@ namespace Neo.Plugins
                 if (!UInt256.TryParse(request.BlockIdentifier.Hash, out var hash))
                     return Error.BLOCK_HASH_INVALID.ToJson();
                 var block = NativeContract.Ledger.GetBlock(system.StoreView, hash);
+                if (block is null)
+                    return Error.BLOCK_NOT_FOUND.ToJson();
                 request.BlockIdentifier.Index = block.Index;
                 if (Settings.Default.EnableHistoricalBalance)
                     snapshot = new HistoricalDataCache(db, GetStateRoot(block.Index));
