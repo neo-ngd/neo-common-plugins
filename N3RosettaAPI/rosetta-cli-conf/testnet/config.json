@@ -73,7 +73,7 @@
             }
         ],
         "end_conditions": {
-            "create_account": 10
+            "transfer": 3
         }
     },
     "data": {

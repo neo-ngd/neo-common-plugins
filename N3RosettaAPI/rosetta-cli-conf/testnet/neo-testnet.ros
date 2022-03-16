@@ -1,21 +1,3 @@
-create_account(1){
-  create{
-    network = {"network":"testnet", "blockchain":"neo n3"};
-    key = generate_key({"curve_type": "secp256r1"});
-    account = derive({
-      "network_identifier": {{network}},
-       "public_key": {{key.public_key}}
-    });
-
-    // If the account is not saved, the key will be lost!
-    save_account({
-      "account_identifier": {{account.account_identifier}},
-      "keypair": {{key}}
-    });
-  }
-}
-
-
 
 transfer(1){
   transfer{
