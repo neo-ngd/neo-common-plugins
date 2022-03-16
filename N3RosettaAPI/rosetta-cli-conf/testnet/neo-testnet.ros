@@ -1,0 +1,95 @@
+create_account(1){
+  create{
+    network = {"network":"testnet", "blockchain":"neo n3"};
+    key = generate_key({"curve_type": "secp256r1"});
+    account = derive({
+      "network_identifier": {{network}},
+       "public_key": {{key.public_key}}
+    });
+
+    // If the account is not saved, the key will be lost!
+    save_account({
+      "account_identifier": {{account.account_identifier}},
+      "keypair": {{key}}
+    });
+  }
+}
+
+
+
+transfer(1){
+  transfer{
+    transfer.network = {"network":"testnet", "blockchain":"neo n3"};
+    //currency = {"symbol":"NEO", "decimals":0,"metadata": {"script_hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"}};
+	currency = {"symbol":"GAS", "decimals":8,"metadata": {"script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"}};
+    sender = find_balance({
+	  "account_identifier":{"address":"NcpevbKeAFioFRs8zdB5J9UkMZQxKBwExw"},
+      "minimum_balance":{
+        "value": "1",
+        "currency": {{currency}}
+      }
+    });
+
+    print_message({"sender":{{sender}}});
+    // Set the recipient_amount as some value <= sender.balance-max_fee
+    max_fee = "0";
+    available_amount = {{sender.balance.value}} - {{max_fee}};
+    // recipient_amount = random_number({"minimum": "1", "maximum": {{available_amount}}});
+	recipient_amount = "1";
+    print_message({"recipient_amount":{{recipient_amount}}});
+
+    // Find recipient and construct operations
+    sender_amount = 0 - {{recipient_amount}};
+    // recipient = find_balance({
+      // "not_account_identifier":[{{sender.account_identifier}}],
+      // "minimum_balance":{
+        // "value": "0",
+        // "currency": {{currency}}
+      // },
+      // "create_limit": 100,
+      // "create_probability": 50
+    // });
+	recipient ={"account_identifier":{"address":"NPS3U9PduobRCai5ZUdK2P3Y8RjwzMVfSg"}};
+    transfer.confirmation_depth = "1";
+
+	transfer.preprocess_metadata={
+		"signers": [
+			{
+                "account": {{sender.account_identifier.address}},
+                "scopes": "CalledByEntry"
+            }
+        ],
+		"signer_metadata":[
+		{
+                "signer_account": {{sender.account_identifier.address}},
+                "related_accounts": [],
+				"m":0
+            }
+		]
+	};
+	
+
+    transfer.operations = [
+      {
+        "operation_identifier":{"index":0},
+        "type":"Transfer",
+        "account":{{sender.account_identifier}},
+        "amount":{
+          "value":{{sender_amount}},
+          "currency":{{currency}}
+        }
+      },
+      {
+        "operation_identifier":{"index":1},
+		"related_operations":[{"index":0}],
+        "type":"Transfer",
+        "account":{{recipient.account_identifier}},
+        "amount":{
+          "value":{{recipient_amount}},
+          "currency":{{currency}}
+        }
+      }
+    ];
+	
+  }
+}

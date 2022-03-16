@@ -1,0 +1,89 @@
+{
+    "network": {
+        "blockchain": "neo n3",
+        "network": "testnet"
+    },
+    "online_url": "http://127.0.0.1:37777",
+    "data_directory": "",
+    "http_timeout": 300,
+    "tip_delay": 15,
+    "construction": {
+        "offline_url": "http://127.0.0.1:37777",
+        "stale_depth": 3,
+        "broadcast_limit": 5,
+        "constructor_dsl_file": "neo-testnet.ros",
+        "prefunded_accounts": [{
+                "privkey": "1000000000000000000000000000000000000000000000000000000000000000",
+                "account_identifier": {
+                    "address": "NgsewvzsPLRRDfRu1g3H5GzCLt7HF9uJyP",
+                    "metadata": {}
+                },
+                "curve_type": "secp256r1",
+                "currency": {
+                    "symbol": "GAS",
+                    "decimals": 8,
+                    "metadata": {
+                        "script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+                    }
+                }
+            },
+			{
+                "privkey": "1000000000000000000000000000000000000000000000000000000000000000",
+                "account_identifier": {
+                    "address": "NfnFVXwwgD75vxqM8nnirpvBCb8ex9egZn",
+                    "metadata": {}
+                },
+                "curve_type": "secp256r1",
+                "currency": {
+                    "symbol": "GAS",
+                    "decimals": 8,
+                    "metadata": {
+                        "script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+                    }
+                }
+            },
+			{
+                "privkey": "91857b6e38f1a39f51cfb6f2eaf7e11d44a1193f1a9d3f7793ed01d012b765ce",
+                "account_identifier": {
+                    "address": "NcpevbKeAFioFRs8zdB5J9UkMZQxKBwExw",
+                    "metadata": {}
+                },
+                "curve_type": "secp256r1",
+                "currency": {
+                    "symbol": "GAS",
+                    "decimals": 8,
+                    "metadata": {
+                        "script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+                    }
+                }
+            }, {
+                "privkey": "48083e9f55df857540ce7b3de251a78ee5bbad325ac82f22bbdadeb0fce1d960",
+                "account_identifier": {
+                    "address": "NgGCEfyNoSaRZYxoj6WdJqkZnov3DAaY6F",
+                    "metadata": {}
+                },
+                "curve_type": "secp256r1",
+                "currency": {
+                    "symbol": "NEO",
+                    "decimals": 0,
+                    "metadata": {
+                        "script_hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"
+                    }
+                }
+            }
+        ],
+        "end_conditions": {
+            "create_account": 10
+        }
+    },
+    "data": {
+        "initial_balance_fetch_disabled": false,
+        "historical_balance_enabled": false,
+        "inactive_discrepancy_search_disabled": true,
+        "reconciliation_disabled": true,
+        "balance_tracking_disabled": true,
+        "end_conditions": {
+            "index": 15000
+        }
+    }
+}
