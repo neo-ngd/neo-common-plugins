@@ -157,7 +157,6 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionMetadata(ConstructionMetadataRequest request)
         {
-            Console.WriteLine($"ConstructionMetadata Start");
             if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
