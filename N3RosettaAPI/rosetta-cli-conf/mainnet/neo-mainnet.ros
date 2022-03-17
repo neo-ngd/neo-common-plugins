@@ -1,21 +1,30 @@
 
-transfer(1){
+
+transfer(10){
   transfer{
     transfer.network = {"network":"testnet", "blockchain":"neo n3"};
-    //currency = {"symbol":"NEO", "decimals":0,"metadata": {"script_hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"}};
-	currency = {"symbol":"GAS", "decimals":8,"metadata": {"script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"}};
+    currency = {"symbol":"NEO", "decimals":0,"metadata": {"script_hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"}};
+	//currency = {"symbol":"GAS", "decimals":8,"metadata": {"script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"}};
+	fee_currency = {"symbol":"GAS", "decimals":8,"metadata": {"script_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf"}};
+	fee_sender=find_balance({
+	    "account_identifier":{"address":"NcpevbKeAFioFRs8zdB5J9UkMZQxKBwExw"},
+        "minimum_balance":{
+          "value": "100000000",
+          "currency": {{fee_currency}}
+        }
+    });
     sender = find_balance({
-	  "account_identifier":{"address":"NcpevbKeAFioFRs8zdB5J9UkMZQxKBwExw"},
+	  "not_account_identifier":[{{fee_sender.account_identifier}}],
       "minimum_balance":{
         "value": "1",
         "currency": {{currency}}
       }
     });
+	
 
-    print_message({"sender":{{sender}}});
+    print_message({"sender":{{sender}},"fee_sender":{{fee_sender}}});
     // Set the recipient_amount as some value <= sender.balance-max_fee
-    max_fee = "0";
-    available_amount = {{sender.balance.value}} - {{max_fee}};
+    // available_amount = {{sender.balance.value}};
     // recipient_amount = random_number({"minimum": "1", "maximum": {{available_amount}}});
 	recipient_amount = "1";
     print_message({"recipient_amount":{{recipient_amount}}});
@@ -37,12 +46,21 @@ transfer(1){
 	transfer.preprocess_metadata={
 		"signers": [
 			{
+                "account": {{fee_sender.account_identifier.address}},
+                "scopes": "CalledByEntry"
+            },
+			{
                 "account": {{sender.account_identifier.address}},
                 "scopes": "CalledByEntry"
             }
         ],
 		"signer_metadata":[
-		{
+			{
+                "signer_account": {{fee_sender.account_identifier.address}},
+                "related_accounts": [],
+				"m":0
+            },
+			{
                 "signer_account": {{sender.account_identifier.address}},
                 "related_accounts": [],
 				"m":0
@@ -75,3 +93,6 @@ transfer(1){
 	
   }
 }
+
+
+
