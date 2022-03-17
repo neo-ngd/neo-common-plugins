@@ -41,6 +41,8 @@ namespace Neo.Plugins
             }
             else if (request.BlockIdentifier.Index is not null)
             {
+                if (request.BlockIdentifier.Index < 0)
+                    return Error.BLOCK_INDEX_INVALID.ToJson();
                 var index = (uint)request.BlockIdentifier.Index;
                 var hash = NativeContract.Ledger.GetBlockHash(system.StoreView, index);
                 if (hash is null)
