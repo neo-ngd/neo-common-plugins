@@ -3,9 +3,9 @@ RUN apt-get update && apt-get install -y \
   unzip \
   wget 
 
-WORKDIR /mytmp
+WORKDIR /tmp
 RUN git clone https://github.com/neo-ngd/neo-common-plugins.git
-WORKDIR /mytmp/neo-common-plugins/N3RosettaAPI
+WORKDIR /tmp/neo-common-plugins/N3RosettaAPI
 RUN dotnet restore && dotnet publish -c Release -o /api
 
 WORKDIR /app
@@ -13,22 +13,25 @@ RUN wget https://github.com/neo-project/neo-node/releases/download/v3.1.0/neo-cl
 RUN unzip neo-cli-linux-x64.zip
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal AS final
+ARG network=mainnet
 RUN apt-get update && apt-get install -y \
   screen \
   libleveldb-dev \
   sqlite3
 RUN rm -rf /var/lib/apt/lists/*
 
-WORKDIR /neo-cli/Plugins
-COPY --from=build /api/N3RosettaAPI.dll .
-COPY --from=build /mytmp/neo-common-plugins/N3RosettaAPI/Dependencies/LevelDBStore.dll .
-
-WORKDIR /neo-cli/Plugins/N3RosettaAPI
-COPY --from=build /api/N3RosettaAPI/config.json .
-
 WORKDIR /neo-cli
 COPY --from=build /app/neo-cli .
-COPY --from=build /mytmp/neo-common-plugins/N3RosettaAPI/Dependencies/libleveldb.so .
+
+WORKDIR /neo-cli/Plugins
+COPY --from=build /api/N3RosettaAPI.dll .
+COPY --from=build /tmp/neo-common-plugins/N3RosettaAPI/Dependencies/LevelDBStore.dll .
+
+WORKDIR /neo-cli/Plugins/N3RosettaAPI
+COPY --from=build /api/N3RosettaAPI/config.${network}.json config.json
+
+WORKDIR /neo-cli
+RUN cp config.${network}.json config.json
 COPY start.sh .
 RUN chmod +x start.sh
 
