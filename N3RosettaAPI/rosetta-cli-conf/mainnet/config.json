@@ -1,7 +1,7 @@
 {
     "network": {
         "blockchain": "neo n3",
-        "network": "testnet"
+        "network": "mainnet"
     },
     "online_url": "http://127.0.0.1:37777",
     "data_directory": "",
