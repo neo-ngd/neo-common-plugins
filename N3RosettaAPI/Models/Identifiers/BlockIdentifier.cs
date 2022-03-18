@@ -15,7 +15,8 @@ namespace Neo.Plugins
 
         public static BlockIdentifier FromJson(JObject json)
         {
-            return new BlockIdentifier((long)json["index"].AsNumber(), json["hash"].AsString());
+            if (json is null) return null;
+            return new BlockIdentifier((long)json["index"]?.AsNumber(), json["hash"]?.AsString());
         }
 
         public JObject ToJson()

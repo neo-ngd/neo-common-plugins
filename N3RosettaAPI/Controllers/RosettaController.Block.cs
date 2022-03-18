@@ -24,7 +24,9 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject Block(BlockRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
             var index = request.BlockIdentifier.Index;
@@ -154,9 +156,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject BlockTransaction(BlockTransactionRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             // check block
             var blockIndex = request.BlockIdentifier.Index;
             var blockHashString = request.BlockIdentifier.Hash;

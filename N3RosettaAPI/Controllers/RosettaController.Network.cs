@@ -15,8 +15,6 @@ namespace Neo.Plugins
         [HttpPost("/network/list")]
         public JObject NetworkList(MetadataRequest request)
         {
-            var n = system.Settings.Network;
-            var network = n == 860833102 ? "mainnet" : n == 877933390 ? "testnet" : "privatenet";
             NetworkIdentifier networkIdentifier = new NetworkIdentifier("neo n3", network);
             NetworkListResponse networkListResponse = new NetworkListResponse(new NetworkIdentifier[] { networkIdentifier });
             return networkListResponse.ToJson();
@@ -25,7 +23,9 @@ namespace Neo.Plugins
         [HttpPost("/network/options")]
         public JObject NetworkOptions(NetworkRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
             Version version = new Version(Settings.Default.RosettaVersion, LocalNode.UserAgent);
@@ -38,7 +38,9 @@ namespace Neo.Plugins
         [HttpPost("/network/status")]
         public JObject NetworkStatus(NetworkRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
             var snapshot = system.StoreView;
@@ -49,7 +51,7 @@ namespace Neo.Plugins
 
             string currentBlockHash = currentBlock.Hash.ToString();
             long currentBlockTimestamp = (long)currentBlock.Timestamp;
-            
+
             BlockIdentifier currentBlockIdentifier = new BlockIdentifier(currentHeight, currentBlockHash);
             BlockIdentifier genesisBlockIdentifier = new BlockIdentifier(system.GenesisBlock.Index, system.GenesisBlock.Hash.ToString());
 

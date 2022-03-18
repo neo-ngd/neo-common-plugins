@@ -20,9 +20,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject Mempool(NetworkRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             NeoTransaction[] neoTxes = system.MemPool.ToArray();
             TransactionIdentifier[] transactionIdentifiers = neoTxes.Select(p => new TransactionIdentifier(p.Hash.ToString())).ToArray();
             MempoolResponse response = new MempoolResponse(transactionIdentifiers);
@@ -40,7 +41,9 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject MempoolTransaction(MempoolTransactionRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             // check tx
             if (request.TransactionIdentifier == null)
