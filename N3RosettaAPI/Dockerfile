@@ -13,7 +13,6 @@ RUN wget https://github.com/neo-project/neo-node/releases/download/v3.1.0/neo-cl
 RUN unzip neo-cli-linux-x64.zip
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal AS final
-ARG network=mainnet
 RUN apt-get update && apt-get install -y \
   screen \
   libleveldb-dev \
@@ -28,11 +27,11 @@ COPY --from=build /api/N3RosettaAPI.dll .
 COPY --from=build /tmp/neo-common-plugins/N3RosettaAPI/Dependencies/LevelDBStore.dll .
 
 WORKDIR /neo-cli/Plugins/N3RosettaAPI
-COPY --from=build /api/N3RosettaAPI/config.${network}.json config.json
+COPY --from=build /api/N3RosettaAPI/config.*.json .
 
 WORKDIR /neo-cli
-RUN cp config.${network}.json config.json
 COPY start.sh .
+COPY neo-cli-conf/* .
 RUN chmod +x start.sh
 
-ENTRYPOINT ["/neo-cli/start.sh" ]
+ENTRYPOINT ["./start.sh", "NETWORK", "MODE"]
