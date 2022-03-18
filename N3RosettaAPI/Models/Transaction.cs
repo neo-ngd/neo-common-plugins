@@ -18,6 +18,15 @@ namespace Neo.Plugins
             Metadata = metadata;
         }
 
+        public static Transaction FromJson(JObject json)
+        {
+            return new(
+                TransactionIdentifier.FromJson(json["transaction_identifier"]),
+                json["operations"]?.GetArray().Select(p => Operation.FromJson(p)).ToArray(),
+                Metadata.FromJson(json["metadata"])
+            );
+        }
+
         public JObject ToJson()
         {
             JObject json = new JObject();
