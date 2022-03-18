@@ -20,18 +20,18 @@ RUN apt-get update && apt-get install -y \
 RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /neo-cli
-COPY --from=build /app/neo-cli .
+COPY --from=build /app/neo-cli ./
 
 WORKDIR /neo-cli/Plugins
-COPY --from=build /api/N3RosettaAPI.dll .
-COPY --from=build /tmp/neo-common-plugins/N3RosettaAPI/Dependencies/LevelDBStore.dll .
+COPY --from=build /api/N3RosettaAPI.dll ./
+COPY --from=build /tmp/neo-common-plugins/N3RosettaAPI/Dependencies/LevelDBStore.dll ./
 
 WORKDIR /neo-cli/Plugins/N3RosettaAPI
-COPY --from=build /api/N3RosettaAPI/config.*.json .
+COPY --from=build /api/N3RosettaAPI/config.*.json ./
 
 WORKDIR /neo-cli
-COPY start.sh .
-COPY neo-cli-conf/* .
+COPY start.sh ./
+COPY neo-cli-conf/* ./
 RUN chmod +x start.sh
 
 ENTRYPOINT ["./start.sh", "NETWORK", "MODE"]
