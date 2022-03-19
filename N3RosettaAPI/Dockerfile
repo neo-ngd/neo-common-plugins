@@ -9,8 +9,10 @@ WORKDIR /tmp/neo-common-plugins/N3RosettaAPI
 RUN dotnet restore && dotnet publish -c Release -o /api
 
 WORKDIR /app
-RUN wget https://github.com/neo-project/neo-node/releases/download/v3.1.0/neo-cli-linux-x64.zip
-RUN unzip neo-cli-linux-x64.zip
+RUN git clone https://github.com/neo-project/neo-node.git
+WORKDIR /app/neo-node
+RUN git checkout v3.1.0
+RUN dotnet publish neo-cli/neo-cli.csproj -o /app/neo-cli
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal AS final
 RUN apt-get update && apt-get install -y \
