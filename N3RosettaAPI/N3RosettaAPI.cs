@@ -4,11 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
-using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -92,117 +90,16 @@ namespace Neo.Plugins
         {
             if (system.Settings.Network != Settings.Default.Network) return;
 
-            //processing log for transactions
             foreach (var appExec in applicationExecutedList.Where(p => p.Transaction != null))
             {
-                var txJson = TxLogToJson(appExec);
-                controller.SaveTransactionJson(appExec.Transaction.Hash, txJson);
+                controller.SaveTransaction(block, appExec.Transaction, appExec);
             }
 
-            //processing log for block
-            var blockJson = BlockLogToJson(block, applicationExecutedList);
-            if (blockJson != null)
-            {
-                controller.SaveBlockJson(block.Hash, blockJson);
-            }
+            controller.SaveBlock(block, applicationExecutedList.Where(p => p.Transaction is null).ToList());
 
             if (Settings.Default.EnableHistoricalBalance)
                 controller.SaveStates(block.Index, snapshot.GetChangeSet().Where(p => p.State != TrackState.None).ToList());
         }
-
-        public static JObject TxLogToJson(Blockchain.ApplicationExecuted appExec)
-        {
-            global::System.Diagnostics.Debug.Assert(appExec.Transaction != null);
-
-            var txJson = new JObject();
-            txJson["txid"] = appExec.Transaction.Hash.ToString();
-            JObject trigger = new JObject();
-            trigger["trigger"] = appExec.Trigger;
-            trigger["vmstate"] = appExec.VMState;
-            trigger["exception"] = GetExceptionMessage(appExec.Exception);
-            trigger["gasconsumed"] = appExec.GasConsumed.ToString();
-            try
-            {
-                if (appExec.Stack.Length <= 1000)
-                {
-                    trigger["stack"] = appExec.Stack.Select(q => q.ToJson()).ToArray();
-                }
-                else
-                {
-                    trigger["stack"] = "error: too many items";
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                trigger["stack"] = "error: recursive reference";
-            }
-            trigger["notifications"] = appExec.Notifications.Select(q =>
-            {
-                JObject notification = new JObject();
-                notification["contract"] = q.ScriptHash.ToString();
-                notification["eventname"] = q.EventName;
-                try
-                {
-                    notification["state"] = q.State.ToJson();
-                }
-                catch (InvalidOperationException)
-                {
-                    notification["state"] = "error: recursive reference";
-                }
-                return notification;
-            }).ToArray();
-
-            txJson["executions"] = new List<JObject>() { trigger }.ToArray();
-            return txJson;
-        }
-
-        public static JObject BlockLogToJson(NeoBlock block, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList)
-        {
-            var blocks = applicationExecutedList.Where(p => p.Transaction is null).ToArray();
-            if (blocks.Length > 0)
-            {
-                var blockJson = new JObject();
-                var blockHash = block.Hash.ToArray();
-                blockJson["blockhash"] = block.Hash.ToString();
-                var triggerList = new List<JObject>();
-                foreach (var appExec in blocks)
-                {
-                    JObject trigger = new JObject();
-                    trigger["trigger"] = appExec.Trigger;
-                    trigger["vmstate"] = appExec.VMState;
-                    trigger["gasconsumed"] = appExec.GasConsumed.ToString();
-                    try
-                    {
-                        trigger["stack"] = appExec.Stack.Select(q => q.ToJson()).ToArray();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        trigger["stack"] = "error: recursive reference";
-                    }
-                    trigger["notifications"] = appExec.Notifications.Select(q =>
-                    {
-                        JObject notification = new JObject();
-                        notification["contract"] = q.ScriptHash.ToString();
-                        notification["eventname"] = q.EventName;
-                        try
-                        {
-                            notification["state"] = q.State.ToJson();
-                        }
-                        catch (InvalidOperationException)
-                        {
-                            notification["state"] = "error: recursive reference";
-                        }
-                        return notification;
-                    }).ToArray();
-                    triggerList.Add(trigger);
-                }
-                blockJson["executions"] = triggerList.ToArray();
-                return blockJson;
-            }
-
-            return null;
-        }
-
 
         void IPersistencePlugin.OnCommit(NeoSystem system, NeoBlock block, DataCache snapshot)
         {

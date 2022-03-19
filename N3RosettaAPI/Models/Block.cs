@@ -14,7 +14,7 @@ namespace Neo.Plugins
         public Transaction[] Transactions { get; set; }
         public Metadata Metadata { get; set; }
 
-        public Block(BlockIdentifier blockIdentifier, BlockIdentifier parentBlockIdentifier, 
+        public Block(BlockIdentifier blockIdentifier, BlockIdentifier parentBlockIdentifier,
             long timestamp, Transaction[] transactions, Metadata metadata = null)
         {
             BlockIdentifier = blockIdentifier;
@@ -24,9 +24,20 @@ namespace Neo.Plugins
             Metadata = metadata;
         }
 
+        public static Block FromJson(JObject json)
+        {
+            return new(
+                BlockIdentifier.FromJson(json["block_identifier"]),
+                BlockIdentifier.FromJson(json["parent_block_identifier"]),
+                (long)json["timestamp"].GetNumber(),
+                json["transactions"].GetArray().Select(p => Transaction.FromJson(p)).ToArray(),
+                Metadata.FromJson(json["metadata"])
+            );
+        }
+
         public JObject ToJson()
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["block_identifier"] = BlockIdentifier.ToJson();
             json["parent_block_identifier"] = ParentBlockIdentifier.ToJson();
             json["timestamp"] = Timestamp;
