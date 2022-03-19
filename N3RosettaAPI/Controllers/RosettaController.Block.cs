@@ -20,7 +20,9 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject Block(BlockRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             var snapshot = system.GetSnapshot();
             NeoBlock neoBlock;
@@ -78,9 +80,11 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject BlockTransaction(BlockTransactionRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+          
             var blockIndex = request.BlockIdentifier.Index;
             var blockHashString = request.BlockIdentifier.Hash;
             var snapshot = system.GetSnapshot();

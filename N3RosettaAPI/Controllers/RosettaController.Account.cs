@@ -27,7 +27,9 @@ namespace Neo.Plugins
         {
             DataCache snapshot = system.StoreView;
             BlockIdentifier respBlockIdentifier;
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             if (request.AccountIdentifier is null)
                 return Error.ACCOUNT_IDENTIFIER_INVALID.ToJson();

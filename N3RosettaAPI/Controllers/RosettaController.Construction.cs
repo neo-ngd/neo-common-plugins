@@ -34,7 +34,9 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionCombine(ConstructionCombineRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
             NeoTransaction neoTx;
@@ -101,9 +103,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionDerive(ConstructionDeriveRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             if (request.PublicKey.CurveType != CurveType.Secp256r1)
                 return Error.CURVE_NOT_SUPPORTED.ToJson();
 
@@ -129,9 +132,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionHash(ConstructionHashRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             NeoTransaction neoTx;
             try
             {
@@ -157,7 +161,9 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionMetadata(ConstructionMetadataRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
 
             // get signers
@@ -262,9 +268,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionParse(ConstructionParseRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             NeoTransaction neoTx;
             try
             {
@@ -310,9 +317,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionPayloads(ConstructionPayloadsRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             // The Operations in the request of this method won't be handled again because they are already handled in `/construction/preprocess`
             NeoTransaction neoTx;
             UInt160[] pendingSigners = new UInt160[0];
@@ -366,9 +374,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionPreprocess(ConstructionPreprocessRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             // this method is used to create metadata required for the construction of tx in an offline environment
             // find signers (who pay the fees) in request.Metadata
             if (request.Metadata == null)
@@ -413,7 +422,7 @@ namespace Neo.Plugins
                 }
             }
 
-            Metadata options = new(pairs);          
+            Metadata options = new(pairs);
             SignerMetadata[] signerMetadatas = (request.Metadata["signer_metadata"] as JArray).Select(p => SignerMetadata.FromJson(p, system.Settings.AddressVersion)).ToArray();
             AccountIdentifier[] publicKeys = GetRequiredSigners(signerMetadatas);
             ConstructionPreprocessResponse response = new(options, publicKeys);
@@ -432,9 +441,10 @@ namespace Neo.Plugins
         /// <returns></returns>
         public JObject ConstructionSubmit(ConstructionSubmitRequest request)
         {
-            if (request.NetworkIdentifier.Blockchain.ToLower() != "neo n3")
+            if (request.NetworkIdentifier?.Blockchain?.ToLower() != "neo n3")
                 return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
-
+            if (request.NetworkIdentifier?.Network?.ToLower() != network)
+                return Error.NETWORK_IDENTIFIER_INVALID.ToJson();
             NeoTransaction neoTx;
             try
             {
@@ -612,7 +622,7 @@ namespace Neo.Plugins
             return networkFee;
         }
 
-     
+
         private byte[] ConvertOperationsToScript(Operation[] operations)
         {
             var n = operations.Length;
@@ -716,7 +726,7 @@ namespace Neo.Plugins
                 Console.WriteLine($"SigningPayload.HexBytes: {signature.SigningPayload.HexBytes} not equal to {signData.ToHexString()}");
                 return false;
             }
-          
+
             // 3. check if public key and signature matches
             return Crypto.VerifySignature(signData, signature.HexBytes.HexToBytes(), pubKey);
         }

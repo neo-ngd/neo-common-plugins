@@ -17,8 +17,9 @@ namespace Neo.Plugins
 
         public static NetworkIdentifier FromJson(JObject json)
         {
-            return new NetworkIdentifier(json["blockchain"].AsString(),
-                json["network"].AsString(),
+            if (json is null) return null;
+            return new NetworkIdentifier(json["blockchain"]?.AsString(),
+                json["network"]?.AsString(),
                 json.ContainsProperty("sub_network_identifier") ? SubNetworkIdentifier.FromJson(json["sub_network_identifier"]) : null);
         }
 

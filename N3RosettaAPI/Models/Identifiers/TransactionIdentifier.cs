@@ -31,7 +31,8 @@ namespace Neo.Plugins
 
         public static TransactionIdentifier FromJson(JObject json)
         {
-            return new TransactionIdentifier(json["hash"].AsString());
+            if (json is null) return null;
+            return new TransactionIdentifier(json["hash"]?.AsString());
         }
 
         public JObject ToJson()
