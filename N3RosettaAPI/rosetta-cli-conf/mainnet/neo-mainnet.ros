@@ -16,7 +16,7 @@ transfer(10){
     sender = find_balance({
 	  "not_account_identifier":[{{fee_sender.account_identifier}}],
       "minimum_balance":{
-        "value": "1",
+        "value": "10",
         "currency": {{currency}}
       }
     });

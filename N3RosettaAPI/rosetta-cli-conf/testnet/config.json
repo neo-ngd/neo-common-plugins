@@ -45,7 +45,7 @@
             }
         ],
         "end_conditions": {
-            "transfer": 1
+            "transfer": 10
         }
     },
     "data": {
