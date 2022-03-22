@@ -4,7 +4,7 @@
         "network": "mainnet"
     },
     "online_url": "http://127.0.0.1:10335",
-    "data_directory": "",
+    "data_directory": "/data",
     "http_timeout": 300,
     "tip_delay": 15,
     "construction": {
