@@ -32,8 +32,8 @@ WORKDIR /neo-cli/Plugins/N3RosettaAPI
 COPY --from=build /api/N3RosettaAPI/config.*.json ./
 
 WORKDIR /neo-cli
-COPY start.sh ./
-COPY neo-cli-conf/* ./
+COPY --from=build /tmp/neo-common-plugins/N3RosettaAPI/start.sh ./
+COPY --from=build /tmp/neo-common-plugins/N3RosettaAPI/neo-cli-conf/* ./
 RUN chmod +x start.sh
 
 ENTRYPOINT ["./start.sh", "NETWORK", "MODE"]
