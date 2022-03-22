@@ -8,7 +8,7 @@
     "http_timeout": 300,
     "tip_delay": 15,
     "construction": {
-        "offline_url": "http://127.0.0.1:10335",
+        "offline_url": "http://127.0.0.1:11335",
         "stale_depth": 3,
         "broadcast_limit": 5,
         "constructor_dsl_file": "neo-testnet.ros",
