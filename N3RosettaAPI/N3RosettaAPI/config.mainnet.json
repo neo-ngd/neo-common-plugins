@@ -1,7 +1,7 @@
 {
   "PluginConfiguration": {
     "Network": 860833102,
-    "DBPath": "RosettaAPI_{0}",
+    "DBPath": "/data/RosettaAPI_{0}",
     "EnableHistoricalBalance": true,
     "RosettaVersion": "1.4.10",
     "BindAddress": "0.0.0.0",
