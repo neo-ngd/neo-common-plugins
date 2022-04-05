@@ -18,6 +18,7 @@ namespace Neo.Plugins
 
         public static PartialBlockIdentifier FromJson(JObject json)
         {
+            if (json is null) return null;
             return new PartialBlockIdentifier(json.ContainsProperty("index") ? (long?)json["index"].AsNumber() : null,
                 json.ContainsProperty("hash") ? json["hash"].AsString() : null);
         }

@@ -17,6 +17,7 @@ namespace Neo.Plugins
 
         public static AccountIdentifier FromJson(JObject json)
         {
+            if (json is null) return null;
             return new AccountIdentifier(json["address"].AsString(),
                 json.ContainsProperty("sub_account") ? SubAccountIdentifier.FromJson(json["sub_account"]) : null,
                 json.ContainsProperty("metadata") ? Metadata.FromJson(json["metadata"]) : null);
