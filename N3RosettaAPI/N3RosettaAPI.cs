@@ -168,20 +168,20 @@ namespace Neo.Plugins
                     return controller.Mempool(NetworkRequest.FromJson(request));
                 case "/mempool/transaction":
                     return controller.MempoolTransaction(MempoolTransactionRequest.FromJson(request));
-                case "/construction/combine":
-                    return controller.ConstructionCombine(ConstructionCombineRequest.FromJson(request));
                 case "/construction/derive":
                     return controller.ConstructionDerive(ConstructionDeriveRequest.FromJson(request));
-                case "/construction/hash":
-                    return controller.ConstructionHash(ConstructionHashRequest.FromJson(request));
-                case "/construction/metadata":
-                    return controller.ConstructionMetadata(ConstructionMetadataRequest.FromJson(request));
-                case "/construction/parse":
-                    return controller.ConstructionParse(ConstructionParseRequest.FromJson(request));
-                case "/construction/payloads":
-                    return controller.ConstructionPayloads(ConstructionPayloadsRequest.FromJson(request));
                 case "/construction/preprocess":
                     return controller.ConstructionPreprocess(ConstructionPreprocessRequest.FromJson(request));
+                case "/construction/metadata":
+                    return controller.ConstructionMetadata(ConstructionMetadataRequest.FromJson(request));
+                case "/construction/payloads":
+                    return controller.ConstructionPayloads(ConstructionPayloadsRequest.FromJson(request));
+                case "/construction/parse":
+                    return controller.ConstructionParse(ConstructionParseRequest.FromJson(request));
+                case "/construction/combine":
+                    return controller.ConstructionCombine(ConstructionCombineRequest.FromJson(request));
+                case "/construction/hash":
+                    return controller.ConstructionHash(ConstructionHashRequest.FromJson(request));
                 case "/construction/submit":
                     return controller.ConstructionSubmit(ConstructionSubmitRequest.FromJson(request));
                 default:
