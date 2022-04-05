@@ -88,7 +88,7 @@ namespace Neo.Plugins
             Metadata meta = new(new Dictionary<string, JObject>{
                 {"Transactions", new JArray(new JObject[]{(JObject)neoBlock.Hash.ToString()}.Concat(neoBlock.Transactions.Select(p => (JObject)p.Hash.ToString())))}
             });
-            Block block = new(identifier, parent, (long)(neoBlock.Timestamp * 1000), Array.Empty<Transaction>(), meta);
+            Block block = new(identifier, parent, (long)neoBlock.Timestamp, Array.Empty<Transaction>(), meta);
             db.Put(BlockKey(neoBlock.Hash), block.ToJson().ToByteArray(false));
             Transaction systemTx = SystemMintTransaction(neoBlock.Hash, execResult);
             db.Put(TransactionKey(neoBlock.Hash), systemTx.ToJson().ToByteArray(false));
